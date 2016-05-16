@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Light Admin</title>
+
+    <script type="text/javascript" src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+    <script type="text/javascript" src="https://www.amcharts.com/lib/3/serial.js"></script>
+    <script type="text/javascript" src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/local.css" />
+    <link rel="stylesheet" type="text/css" href="css/amchart.css" />
+
+
+    <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/amchart.js"></script>
+
+
+    <!-- you need to include the shieldui css and js assets in order for the charts to work -->
+    <link rel="stylesheet" type="text/css" href="http://www.shieldui.com/shared/components/latest/css/light-bootstrap/all.min.css" />
+    <link id="gridcss" rel="stylesheet" type="text/css" href="http://www.shieldui.com/shared/components/latest/css/dark-bootstrap/all.min.css" />
+
+    <script type="text/javascript" src="http://www.shieldui.com/shared/components/latest/js/shieldui-all.min.js"></script>
+    <script type="text/javascript" src="http://www.prepbootstrap.com/Content/js/gridData.js"></script>
+
+
+</head>
+<body>
+    <div>
+      <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html"></a>
+        </div>
+
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+
+            <ul class="nav navbar-nav navbar-right navbar-user">
+            </ul>
+        </div>
+
+    </nav>
+
+    <div id="page-wrapper">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1>Stock Trend Predictor <small>Suggestion and more</small></h1>
+
+            </div>
+            <div class="col-lg-4">
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="Microsoft">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button">Search</button>
+                </span>
+              </div><!-- /input-group -->
+            </div>
+
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><i class="fa fa-bar-chart-o"></i> Microsoft</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div id="chartdiv"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="panel panel-primary">
+                  <div class="panel-heading">
+                      <h3 class="panel-title"><i class="fa fa-rss"></i> Positive News Articles</h3>
+                  </div>
+                  <div style="overflow:hidden">
+                    <div id="positive" style="overflow-y:scroll" class="panel-body feed"></div>
+                  </div>
+                </div>
+              </div>
+
+                <div class="col-md-3">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <h3 class="panel-title"><i class="fa fa-rss"></i> Negative News Articles</h3>
+                        </div>
+                        <div id="negative" style="overflow-y:scroll" class="panel-body feed"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- /#wrapper -->
+
+    <script type="text/javascript">
+
+
+
+        jQuery(function ($) {
+
+
+
+          $.ajax({url: "http://localhost:9000/api/news", success: function(result){
+              //$("#div1").html(result);
+              //console.log("getting the result back!");
+              //console.log(result);
+              var data = result;
+              $("#positive").html('');
+              $("#negative").html('');
+              var positiveContent = '';
+              var negativeContent = '';
+              for(var i = 0; i < data.length; i++)
+              {
+                var url = data[i]["url"];
+                if(data[i]["type"] == "negative")
+                {
+                  positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
+                }
+                else if(data[i]["type"] == "positive")
+                {
+                  negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
+                }
+                 // if Name is property of your Person object
+              }
+              $("#positive").append(positiveContent);
+              $("#negative").append(negativeContent);
+          }});
+
+
+
+            $("#shieldui-chart1").shieldChart({
+                theme: "light",
+
+                primaryHeader: {
+                    text: ""
+                },
+                exportOptions: {
+                    image: false,
+                    print: false
+                },
+
+                seriesSettings: {
+                    bar: {
+                        stackMode: "normal"
+                    }
+                },
+                axisX: {
+                categoricalValues: ["April 5", "April 6", "April 7",  "April 8", "April 11", "April 12", "April 13",  "April 14", "April 15", "April 18", "April 19", "April 20",  "April 21", "April 22", "April 25", "April 26",  "April 27", "April 28", "April 29"]
+                },
+                dataSeries: [{
+                    seriesType: "line",
+                    collectionAlias: "Stock Price over a month",
+                    data: [54.56, 55.12, 54.46, 55, 56.65, 55.78, 54.53, 57, 56.67, 56.69, 57.32, 58.12, 56.15, 54.25, 54.78, 53.15, 52.11, 51.98, 51.23, 51.08, 50.09, 50.15]
+                }]
+            });
+
+
+        });
+    </script>
+</body>
+</html>
