@@ -94,18 +94,43 @@
 
 
         jQuery(function ($) {
+          /*
+          var chartData = [];
+          function generateChartData() {
+
+            chartData.push( {
+              "date": "2016-04-04",
+              "price": 55.43,
+              "positive": 5,
+              "negative": 8
+            } );
+          }
+          */
+          //console.log(chartData);
+          //var chart;
+          //chart = chart.write("chartdiv");
 
 
+          //chart.dataProvider.push( {
+
+          //})
+          //chart.validateData();
+
+          var data;
+
+          // associative array to store numbers of positive and negative Articles
+          // key: date, value: [negative, positive]
+          var countArray = new Array();
+
+          // associative array to store price of the a stock
+          // key: date, value: price
+          var priceArray = new Array();
 
           $.ajax({url: "http://localhost:9000/api/news", success: function(result){
               //$("#div1").html(result);
               console.log("getting the result back!");
               //console.log(result);
-              var data = result;
-
-              var date = new Date('2013-03-10T02:00:00Z');
-              var test = date.getFullYear()+'-' + (date.getMonth()) + '-'+date.getDate();
-              console.log(test);
+              data = result;
 
               $("#positive").html('');
               $("#negative").html('');
@@ -114,21 +139,197 @@
               for(var i = 0; i < data.length; i++)
               {
                 var url = data[i]["url"];
+                var d = data[i]["time"];
+                d = d.substring(0, 10);
                 if(data[i]["type"] == "negative")
                 {
-                  positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
+                  //console.log(d);
+                  //console.log(countArray[d]);
+                  if(countArray[d] === undefined)
+                  {
+                    countArray[d] = [0, 0];
+                    countArray[d][0] += 1;
+                  }
+                  else {
+                    countArray[d][0] += 1;
+                  }
+                  negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
                 }
+
                 else if(data[i]["type"] == "positive")
                 {
-                  negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
+                  if(countArray[d] === undefined)
+                  {
+                    countArray[d] = [0,0];
+                    countArray[d][1] += 1;
+                  }
+                  else {
+                    countArray[d][1] += 1;
+                  }
+                  positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
                 }
                  // if Name is property of your Person object
               }
               $("#positive").append(positiveContent);
               $("#negative").append(negativeContent);
+
+              /**
+               * fill chart data
+               */
+
+               //console.log("2016-05-02");
+               //console.log(negative["2016-05-02"]);
+
+               var i = 0;
+               var chartData = [];
+               for(key in countArray)
+               {
+                 /*
+                 skip exchange closing dates
+                 if(priceArray[key] === undefined)
+                 {
+                   continue;
+                 }
+                 */
+
+                 console.log(key);
+                 console.log(countArray[key][1]);
+                 console.log(countArray[key][0]);
+
+                 // prepare chart data
+                 chartData.push( {
+                   "date": key,
+                   "positive": parseInt(countArray[key][1]),
+                   "negative": parseInt(countArray[key][0]),
+                   "price": 40
+                 })
+
+
+                 i++;
+                 if(i == 3)
+                 {
+                   break;
+                 }
+               }
+
+               // update chart data
+               chart.dataProvider = chartData;
+               chart.validateData();
           }});
 
 
+
+
+          /**
+           * Add an event to handle hovers
+           */
+          chart.timeout;
+          chart.addListener( "rollOverGraphItem", function( event ) {
+            //console.log(event);
+            //event.item.dataContext.negative = 1;
+            filterArticles( event.item.dataContext.date );
+
+          } );
+          chart.addListener( "rollOutGraph", function( event ) {
+
+            //showAllArticles( data );
+
+          } );
+
+          function setOpacity( graph, opacity ) {
+            var className = "amcharts-graph-" + graph.id;
+            console.log(className);
+            var items = document.getElementsByClassName( className );
+            console.log(items);
+            if ( undefined === items )
+              return;
+            for ( var x in items ) {
+              if ( "object" !== typeof items[x] )
+                continue;
+              var path = items[x].getElementsByTagName( "path" )[ 0 ];
+              if ( undefined !== path )
+              	path.style.fillOpacity = opacity;
+            }
+          }
+
+          /**
+           * Filter articles based on dateFo
+           */
+
+          function filterArticles( date ) {
+            $("#positive").html('');
+            $("#negative").html('');
+            var positiveContent = '';
+            var negativeContent = '';
+            for(var i = 0; i < data.length; i++)
+            {
+              var url = data[i]["url"];
+              var d = data[i]["time"];
+              d = d.substring(0, 10);
+              if(data[i]["type"] == "negative" && date == d)
+              {
+                console.log(url);
+                console.log(d);
+                console.log(data[i]["type"]);
+                positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
+              }
+              else if(data[i]["type"] == "positive" && date == d)
+              {
+                console.log(url);
+                console.log(d);
+                console.log(data[i]["type"]);
+                negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
+              }
+               // if Name is property of your Person object
+            }
+            $("#positive").append(positiveContent);
+            $("#negative").append(negativeContent);
+          }
+
+          /**
+           * Filter articles based on dateFo
+           */
+
+           function showAllArticles( articles ) {
+             $("#positive").html('');
+             $("#negative").html('');
+             var positiveContent = '';
+             var negativeContent = '';
+             for(var i = 0; i < data.length; i++)
+             {
+               var url = data[i]["url"];
+               if(data[i]["type"] == "negative")
+               {
+                 positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
+               }
+               else if(data[i]["type"] == "positive")
+               {
+                 negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
+               }
+                // if Name is property of your Person object
+             }
+             $("#positive").append(positiveContent);
+             $("#negative").append(negativeContent);
+           }
+
+
+
+
+
+
+          /**
+           * Add hover events to legend as well
+
+          chart.addListener("init", function () {
+            chart.legend.addListener("rollOverItem", function (event) {
+              setOpacity( event.chart.graphs[event.dataItem.index], 1 );
+            });
+
+            chart.legend.addListener("rollOutItem", function (event) {
+              setOpacity( event.chart.graphs[event.dataItem.index], 0.5 );
+            });
+          });
+          */
 
             $("#shieldui-chart1").shieldChart({
                 theme: "light",
