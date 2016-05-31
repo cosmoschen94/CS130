@@ -8,35 +8,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Advisor</title>
 
-    <script type="text/javascript" src="https://www.amcharts.com/lib/3/amcharts.js"></script>
-    <script type="text/javascript" src="https://www.amcharts.com/lib/3/serial.js"></script>
-    <script type="text/javascript" src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+
 
     <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="font-awesome/css/font-awesome.min.css" />
+    <!--<link rel="stylesheet" type="text/css" href="font-awesome/css/font-awesome.min.css" />-->
     <link rel="stylesheet" type="text/css" href="css/local.css" />
     <link rel="stylesheet" type="text/css" href="css/amchart.css" />
 
-
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
     <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="js/amchart.js"></script>
 
+    <!--<script src="https://code.highcharts.com/highcharts.js"></script>-->
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
 
-    <!-- you need to include the shieldui css and js assets in order for the charts to work -->
-    <link rel="stylesheet" type="text/css" href="http://www.shieldui.com/shared/components/latest/css/light-bootstrap/all.min.css" />
-    <link id="gridcss" rel="stylesheet" type="text/css" href="http://www.shieldui.com/shared/components/latest/css/dark-bootstrap/all.min.css" />
+        <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.10.0/css/bootstrap-select.min.css">
 
-    <script type="text/javascript" src="http://www.shieldui.com/shared/components/latest/js/shieldui-all.min.js"></script>
-    <script type="text/javascript" src="http://www.prepbootstrap.com/Content/js/gridData.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.10.0/js/bootstrap-select.min.js"></script>
+
 
 
 </head>
 <body style="background-color: #ffffff">
     <div>
-
-
-    <div id="page-wrapper">
+      <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-12">
                 <h1 style="color: #000000">Stock Advisor <small>More features to come</small></h1>
@@ -48,7 +46,23 @@
                 <span class="input-group-btn">
                   <button class="btn btn-default" type="button">Search</button>
                 </span>
+
+
               </div><!-- /input-group -->
+              <div style="margin-left:160%">
+                <div class="panel-heading">
+                  <h3 class="panel-title" style="color:#000000"> Select publishers </h3>
+                </div>
+                <select id="selectBox" onchange="filterPublisher();" class="selectpicker" data-live-search="true" data-style="btn-primary">
+                  <option value="All" style="color:#338ce8">All</option>
+                  <option value="CNN" style="color:#338ce8">CNN</option>
+                  <option value="Fox News" style="color:#338ce8">Fox News</option>
+                  <option value="WP" style="color:#338ce8">WP</option>
+                  <option value="WSJ" style="color:#338ce8">WSJ</option>
+                  <option value="LATimes" style="color:#338ce8">LATimes</option>
+                  <option value="NYTimes" style="color:#338ce8">NYTimes</option>
+                </select>
+              </div>
             </div>
 
         </div>
@@ -60,7 +74,7 @@
                         <h3 class="panel-title"><i class="fa fa-bar-chart-o"></i> Microsoft</h3>
                     </div>
                     <div class="panel-body">
-                        <div id="chartdiv"></div>
+                        <div id="container"></div>
                     </div>
                 </div>
             </div>
@@ -69,6 +83,7 @@
                   <div class="panel-heading">
                       <h3 class="panel-title"><i class="fa fa-rss"></i> Positive News Articles</h3>
                   </div>
+
                   <div style="overflow:hidden">
                     <div id="positive" style="overflow-y:scroll" class="panel-body feed"></div>
                   </div>
@@ -91,57 +106,49 @@
 
     <script type="text/javascript">
 
+        /**
+         * prepare data
+         */
+        var news;
+        var ticker;
+        var publisher;
+        var date = new Array();
+        var price = new Array();
+        var posNum = new Array();
+        var negNum = new Array();
+        var posSum = 0;
+        var negSum = 0;
 
+        // associative array to store numbers of positive and negative Articles
+        // key: date, value: [negative, positive]
+        var countArray = new Array();
+
+        // associative array to store price of the a stock
+        // key: date, value: price
+        var priceArray = new Array();
 
         jQuery(function ($) {
-          /*
-          var chartData = [];
-          function generateChartData() {
-
-            chartData.push( {
-              "date": "2016-04-04",
-              "price": 55.43,
-              "positive": 5,
-              "negative": 8
-            } );
-          }
-          */
-          //console.log(chartData);
-          //var chart;
-          //chart = chart.write("chartdiv");
 
 
-          //chart.dataProvider.push( {
 
-          //})
-          //chart.validateData();
-
-          var data;
-
-          // associative array to store numbers of positive and negative Articles
-          // key: date, value: [negative, positive]
-          var countArray = new Array();
-
-          // associative array to store price of the a stock
-          // key: date, value: price
-          var priceArray = new Array();
-
-          $.ajax({url: "http://localhost:9000/api/news", success: function(result){
+          $.ajax({url: "http://localhost:9000/api/news"}).done(function(result){
               //$("#div1").html(result);
-              console.log("getting the result back!");
+              console.log("getting news!");
               //console.log(result);
-              data = result;
+              news = result;
+              //console.log(news);
 
               $("#positive").html('');
               $("#negative").html('');
               var positiveContent = '';
               var negativeContent = '';
-              for(var i = 0; i < data.length; i++)
+              var newsSize = news.length;
+              for(var i = 0; i < newsSize; i++)
               {
-                var url = data[i]["url"];
-                var d = data[i]["time"];
+                var url = news[i]["url"];
+                var d = news[i]["time"];
                 d = d.substring(0, 10);
-                if(data[i]["type"] == "negative")
+                if(news[i]["type"] == "negative")
                 {
                   //console.log(d);
                   //console.log(countArray[d]);
@@ -153,10 +160,12 @@
                   else {
                     countArray[d][0] += 1;
                   }
-                  negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
+                  //negativeContent += '<p>' + news[i]["title"].link(url) + '</p>';
+                  negativeContent += '<p>' + '<a href=url target="_blank">' + news[i]["title"] + '</a>' + '</p>';
+                  negativeContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
                 }
 
-                else if(data[i]["type"] == "positive")
+                else if(news[i]["type"] == "positive")
                 {
                   if(countArray[d] === undefined)
                   {
@@ -166,199 +175,305 @@
                   else {
                     countArray[d][1] += 1;
                   }
-                  positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
+                  positiveContent += '<p>' + news[i]["title"].link(url) + '</p>';
+                  positiveContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
                 }
                  // if Name is property of your Person object
               }
               $("#positive").append(positiveContent);
               $("#negative").append(negativeContent);
 
-              /**
-               * fill chart data
-               */
 
-               //console.log("2016-05-02");
-               //console.log(negative["2016-05-02"]);
+              $.ajax({url: "http://localhost:9000/api/tickers"}).done(function(result){
 
-               var i = 0;
-               var chartData = [];
-               for(key in countArray)
-               {
-                 /*
-                 skip exchange closing dates
-                 if(priceArray[key] === undefined)
-                 {
-                   continue;
-                 }
+                console.log("getting stock data!");
+                ticker = result;
+                //console.log(ticker);
+
+                var tickerSize = ticker.length;
+                for(var i = 0; i < tickerSize; i++)
+                {
+                  var year = ticker[i]["date"].substring(0, 4);
+                  var month = ticker[i]["date"].substring(4, 6);
+                  var day = ticker[i]["date"].substring(6, 8);
+                  var timestamp = Date.UTC(year,month-1,day);
+
+                  date[i] = year + "-" + month + "-" + day;
+                  price[i] = [timestamp, parseFloat(ticker[i]["close"])];
+
+                  if(countArray[date[i]] === undefined)
+                  {
+                    //console.log("store number of articles failed");
+                    posNum[i] = [timestamp, 0];
+                    negNum[i] = [timestamp, 0];
+                  }
+                  else{
+                    //console.log("store number of articles succeed");
+                    negNum[i] = [timestamp, countArray[date[i]][0]];
+                    posNum[i] = [timestamp, countArray[date[i]][1]];
+                  }
+                  //console.log(negNum[i]);
+                  //console.log(posNum[i]);
+                }
+
+                //console.log(date);
+                //console.log(price);
+                //console.log(negNum);
+                //console.log(posNum);
+
+                var articleNum = negNum.length;
+                for(var i = 0; i < articleNum; i++)
+                {
+                  posSum += posNum[i][1];
+                  negSum += negNum[i][1];
+                }
+                //console.log(posSum);
+                //console.log(negSum);
+
+                //date = ["2016-02-22", "2016-02-23", "2016-02-24", "2016-02-25", "2016-02-26", "2016-02-29"];
+                //price = [52.65, 51.18, 51.36, 52.1, 51.3, 50.88];
+                //posNum = [10,0,0,0,0,0];
+                //negNum = [0,0,5,0,0,0];
+                /**
+                 * fill chart data
+                 */
+                $('#container').highcharts("StockChart",{
+                    title: {
+                        text: 'Combo Chart'
+                    },
+                    xAxis: {
+                      type: 'datetime',
+                      //categories: date,
+                      dateTimeLabelFormats: { // don't display the dummy year
+                          month: '%e. %b',
+                          year: '%b'
+                      }
+                    },
+                    yAxis: [{
+                      gridLineWidth: 0,
+                      title: {
+                          text: ' ',
+                          style: {
+                              color: '#51a1e2'
+                          }
+                      },
+                      labels: {
+                          format: ' ',
+                          style: {
+                              color: '#51a1e2'
+                          }
+                      }
+
+                    }, { // Primary yAxis
+                        gridLineWidth: 0,
+                        title: {
+                            text: 'Stock Price',
+                            style: {
+                                color: '#51a1e2'
+                            }
+                        },
+                        labels: {
+                            format: '${value}',
+                            style: {
+                                color: '#51a1e2'
+                            }
+                        }
+                    }, { // Secondary yAxis
+                        labels: {
+                            format: '{value}',
+                            style: {
+                                color: '#0a0101'
+                            }
+                        },
+                        title: {
+                            text: 'Number Of Articles',
+                            style: {
+                                color: '#0a0101'
+                            }
+                        }
+                    }],
+                    labels: {
+                        items: [{
+                            html: 'Total Articles',
+                            style: {
+                                left: '5%',
+                                top: '10%',
+                                color: (Highcharts.theme && Highcharts.theme.textColor) || 'black'
+                            }
+                        }]
+                    },
+                    series: [{
+                        id: 1,
+                        type: 'column',
+                        name: 'positive',
+                        yAxis: 2,
+                        data: posNum,
+                        events: {
+            								mouseOver: function () {
+            										filterArticles("2016-05-24");
+            								}
+            						},
+                        //pointStart: Date.UTC(2016, 1, 22, 9),
+                        pointInterval: 24 * 3600 * 1000,
+                        color: '#55e05b'
+                    }, {
+                        id: 2,
+                        type: 'column',
+                        name: 'negative',
+                        yAxis: 2,
+                        data: negNum,
+                        events: {
+            								mouseOver: function () {
+            										filterArticles("2016-05-24");
+            								}
+            						},
+                        //pointStart: Date.UTC(2016, 1, 22, 9),
+                        pointInterval: 24 * 3600 * 1000,
+                        color: '#f96666',
+                    }, {
+                        id: 3,
+                        type: 'line',
+                        name: 'price',
+                        yAxis: 1,
+                        data: price,
+                        color: '#51a1e2',
+                        //pointStart: Date.UTC(2016, 1, 22, 9),
+                        pointInterval: 24 * 3600 * 1000,
+                        marker: {
+                            lineWidth: 2,
+                            lineColor: '#51a1e2',
+                            fillColor: 'white'
+                        }
+                    }, {
+                        id: 4,
+                        type: 'pie',
+                        name: 'Total Articles',
+                        data: [{
+                            name: 'positive',
+                            y: posSum,
+                            color: '#55e05b' // positive's color
+                        }, {
+                            name: 'negative',
+                            y: negSum,
+                            color: '#f96666' // negative's color
+                        }],
+                        center: ["15%", "5%"],
+                        size: "10%",
+                        showInLegend: false,
+                        dataLabels: {
+                            enabled: false
+                        }
+                    }]
+                });
+
+
+                /**
+                 * Filter articles based on date
                  */
 
-                 console.log(key);
-                 console.log(countArray[key][1]);
-                 console.log(countArray[key][0]);
-
-                 // prepare chart data
-                 chartData.push( {
-                   "date": key,
-                   "positive": parseInt(countArray[key][1]),
-                   "negative": parseInt(countArray[key][0]),
-                   "price": 40
-                 })
-
-
-                 i++;
-                 if(i == 3)
-                 {
-                   break;
-                 }
-               }
-
-               // update chart data
-               chart.dataProvider = chartData;
-               chart.validateData();
-          }});
-
-
-
-
-          /**
-           * Add an event to handle hovers
-           */
-          chart.timeout;
-          chart.addListener( "rollOverGraphItem", function( event ) {
-            //console.log(event);
-            //event.item.dataContext.negative = 1;
-            filterArticles( event.item.dataContext.date );
-
-          } );
-          chart.addListener( "rollOutGraph", function( event ) {
-
-            //showAllArticles( data );
-
-          } );
-
-          function setOpacity( graph, opacity ) {
-            var className = "amcharts-graph-" + graph.id;
-            console.log(className);
-            var items = document.getElementsByClassName( className );
-            console.log(items);
-            if ( undefined === items )
-              return;
-            for ( var x in items ) {
-              if ( "object" !== typeof items[x] )
-                continue;
-              var path = items[x].getElementsByTagName( "path" )[ 0 ];
-              if ( undefined !== path )
-              	path.style.fillOpacity = opacity;
-            }
-          }
-
-          /**
-           * Filter articles based on dateFo
-           */
-
-          function filterArticles( date ) {
-            $("#positive").html('');
-            $("#negative").html('');
-            var positiveContent = '';
-            var negativeContent = '';
-            for(var i = 0; i < data.length; i++)
-            {
-              var url = data[i]["url"];
-              var d = data[i]["time"];
-              d = d.substring(0, 10);
-              if(data[i]["type"] == "negative" && date == d)
-              {
-                console.log(url);
-                console.log(d);
-                console.log(data[i]["type"]);
-                positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
-              }
-              else if(data[i]["type"] == "positive" && date == d)
-              {
-                console.log(url);
-                console.log(d);
-                console.log(data[i]["type"]);
-                negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
-              }
-               // if Name is property of your Person object
-            }
-            $("#positive").append(positiveContent);
-            $("#negative").append(negativeContent);
-          }
-
-          /**
-           * Filter articles based on dateFo
-           */
-
-           function showAllArticles( articles ) {
-             $("#positive").html('');
-             $("#negative").html('');
-             var positiveContent = '';
-             var negativeContent = '';
-             for(var i = 0; i < data.length; i++)
-             {
-               var url = data[i]["url"];
-               if(data[i]["type"] == "negative")
-               {
-                 positiveContent += '<p>' + data[i]["title"].link(url) + '</p>';
-               }
-               else if(data[i]["type"] == "positive")
-               {
-                 negativeContent += '<p>' + data[i]["title"].link(url) + '</p>';
-               }
-                // if Name is property of your Person object
-             }
-             $("#positive").append(positiveContent);
-             $("#negative").append(negativeContent);
-           }
-
-
-
-
-
-
-          /**
-           * Add hover events to legend as well
-
-          chart.addListener("init", function () {
-            chart.legend.addListener("rollOverItem", function (event) {
-              setOpacity( event.chart.graphs[event.dataItem.index], 1 );
-            });
-
-            chart.legend.addListener("rollOutItem", function (event) {
-              setOpacity( event.chart.graphs[event.dataItem.index], 0.5 );
-            });
-          });
-          */
-
-            $("#shieldui-chart1").shieldChart({
-                theme: "light",
-
-                primaryHeader: {
-                    text: ""
-                },
-                exportOptions: {
-                    image: false,
-                    print: false
-                },
-
-                seriesSettings: {
-                    bar: {
-                        stackMode: "normal"
+                function filterArticles( date ) {
+                  $("#positive").html('');
+                  $("#negative").html('');
+                  var positiveContent = '';
+                  var negativeContent = '';
+                  for(var i = 0; i < news.length; i++)
+                  {
+                    var url = news[i]["url"];
+                    var d = news[i]["time"];
+                    d = d.substring(0, 10);
+                    if(news[i]["type"] == "positive" && date == d)
+                    {
+                      //console.log(url);
+                      //console.log(d);
+                      //console.log(news[i]["type"]);
+                      positiveContent += '<p>' + news[i]["title"].link(url) + '</p>';
+                      positiveContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
                     }
-                },
-                axisX: {
-                categoricalValues: ["April 5", "April 6", "April 7",  "April 8", "April 11", "April 12", "April 13",  "April 14", "April 15", "April 18", "April 19", "April 20",  "April 21", "April 22", "April 25", "April 26",  "April 27", "April 28", "April 29"]
-                },
-                dataSeries: [{
-                    seriesType: "line",
-                    collectionAlias: "Stock Price over a month",
-                    data: [54.56, 55.12, 54.46, 55, 56.65, 55.78, 54.53, 57, 56.67, 56.69, 57.32, 58.12, 56.15, 54.25, 54.78, 53.15, 52.11, 51.98, 51.23, 51.08, 50.09, 50.15]
-                }]
-            });
+                    else if(news[i]["type"] == "negative" && date == d)
+                    {
+                      //console.log(url);
+                      //console.log(d);
+                      //console.log(news[i]["type"]);
+                      negativeContent += '<p>' + news[i]["title"].link(url) + '</p>';
+                      negativeContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
+                    }
+                     // if Name is property of your Person object
+                  }
+                  $("#positive").append(positiveContent);
+                  $("#negative").append(negativeContent);
+                }
+              });
+          });
+
+
+
 
 
         });
+
+        /**
+         * Filter articles based on dateFo
+         */
+
+         function showAllArticles() {
+           $("#positive").html('');
+           $("#negative").html('');
+           var positiveContent = '';
+           var negativeContent = '';
+           for(var i = 0; i < news.length; i++)
+           {
+             var url = news[i]["url"];
+             if(news[i]["type"] == "positive")
+             {
+               positiveContent += '<p>' + news[i]["title"].link(url) + '</p>';
+               positiveContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
+             }
+             else if(news[i]["type"] == "negative")
+             {
+               negativeContent += '<p>' + news[i]["title"].link(url) + '</p>';
+               negativeContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
+             }
+              // if Name is property of your Person object
+           }
+           $("#positive").append(positiveContent);
+           $("#negative").append(negativeContent);
+         }
+
+        function filterPublisher() {
+         var selectBox = document.getElementById("selectBox");
+         console.log(selectBox);
+         var selectedValue = selectBox.options[selectBox.selectedIndex].value;
+         if(selectedValue == "All")
+         {
+           showAllArticles();
+         }
+         else {
+           console.log("choose" + selectedValue);
+           $("#positive").html('');
+           $("#negative").html('');
+           var positiveContent = '';
+           var negativeContent = '';
+           for(var i = 0; i < news.length; i++)
+           {
+             var url = news[i]["url"];
+             console.log(news[i]["publisher"]);
+             if(news[i]["type"] == "positive" && news[i]["publisher"] == selectedValue)
+             {
+               positiveContent += '<p>' + news[i]["title"].link(url) + '</p>';
+               positiveContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
+             }
+             else if(news[i]["type"] == "negative" && news[i]["publisher"] == selectedValue)
+             {
+               negativeContent += '<p>' + news[i]["title"].link(url) + '</p>';
+               negativeContent += '<button type="button" class="btn btn-default">' + '<span class="glyphicon glyphicon-thumbs-up" aria-hidden="true">' + '</span>' + '</button>';
+             }
+              // if Name is property of your Person object
+           }
+           $("#positive").append(positiveContent);
+           $("#negative").append(negativeContent);
+         }
+
+        }
     </script>
 </body>
 </html>
