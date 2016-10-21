@@ -1,1 +1,1 @@
-# CS130 IBM project
+# CS130 IBM project: Stock Advisor
